@@ -2,7 +2,6 @@ import numpy as np
 import scipy.sparse as sps
 from .base import Recommender, check_matrix
 from .similarity import Cosine, Pearson, AdjustedCosine
-import resource
 
 
 class ItemKNNRecommender(Recommender):

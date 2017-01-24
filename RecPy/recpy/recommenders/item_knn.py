@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sps
 from .base import Recommender, check_matrix
 from .similarity import Cosine, Pearson, AdjustedCosine
+import resource
 
 
 class ItemKNNRecommender(Recommender):
@@ -33,6 +34,8 @@ class ItemKNNRecommender(Recommender):
         item_weights = self.distance.compute(X)
         # for each column, keep only the top-k scored items
         idx_sorted = np.argsort(item_weights, axis=0)  # sort by column
+
+
         if not self.sparse_weights:
             self.W = item_weights.copy()
             # index of the items that don't belong to the top-k similar items of each column
@@ -48,6 +51,7 @@ class ItemKNNRecommender(Recommender):
                 values.extend(item_weights[top_k_idx, i])
                 rows.extend(np.arange(nitems)[top_k_idx])
                 cols.extend(np.ones(self.k) * i)
+
             self.W_sparse = sps.csc_matrix((values, (rows, cols)), shape=(nitems, nitems), dtype=np.float32)
 
     def recommend(self, user_id, n=None, exclude_seen=True):
@@ -55,6 +59,7 @@ class ItemKNNRecommender(Recommender):
         user_profile = self._get_user_ratings(user_id)
         if self.sparse_weights:
             scores = user_profile.dot(self.W_sparse).toarray().ravel()
+            print(scores)
         else:
             scores = user_profile.dot(self.W).ravel()
         if self.normalize:

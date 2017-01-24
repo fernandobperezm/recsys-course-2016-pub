@@ -13,6 +13,8 @@ from recpy.recommenders.slim import SLIM, MultiThreadSLIM
 from recpy.recommenders.mf import FunkSVD, IALS_numpy, AsySVD, BPRMF
 from recpy.recommenders.non_personalized import TopPop, GlobalEffects
 
+from recpy.recommenders.Memory_item_knn import MEMORYItemKNNRecommender
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +31,7 @@ available_recommenders = OrderedDict([
     ('AsySVD', AsySVD),
     ('IALS_np', IALS_numpy),
     ('BPRMF', BPRMF),
+    ('MEMORY_item_knn', MEMORYItemKNNRecommender)
 ])
 
 # let's use an ArgumentParser to read input arguments
@@ -48,6 +51,7 @@ parser.add_argument('--rnd_seed', type=int, default=1234)
 parser.add_argument('--recommender', type=str, default='top_pop')
 parser.add_argument('--params', type=str, default=None)
 parser.add_argument('--rec_length', type=int, default=10)
+parser.add_argument('--prediction_file', type=str, default=None)
 args = parser.parse_args()
 
 # get the recommender class
@@ -114,6 +118,14 @@ logger.info('Training started')
 recommender.fit(train)
 logger.info('Training completed in {}'.format(dt.now() - tic))
 
+# open the prediction file
+if args.prediction_file:
+    pfile = open(args.prediction_file, 'w')
+    n = args.rec_length if args.rec_length is not None else nitems
+    header = 'user_id,'
+    header += ','.join(['rec_item{}'.format(i+1) for i in range(args.rec_length)]) + '\n'
+    pfile.write(header)
+
 # evaluate the ranking quality
 roc_auc_, precision_, recall_, map_, mrr_, ndcg_ = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 at = args.rec_length
@@ -125,6 +137,15 @@ for test_user in range(nusers):
         n_eval += 1
         # this will rank **all** items
         recommended_items = recommender.recommend(user_id=test_user, exclude_seen=True)
+
+        if args.prediction_file:
+            # write the recommendation list to file, one user per line
+            user_id = test_user
+            rec_list = recommended_items[:args.rec_length]
+            s = str(user_id) + ','
+            s += ','.join([str(x) for x in rec_list]) + '\n'
+            pfile.write(s)
+
         # evaluate the recommendation list with ranking metrics ONLY
         roc_auc_ += roc_auc(recommended_items, relevant_items)
         precision_ += precision(recommended_items, relevant_items, at=at)

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sps
 from .base import check_matrix
-from .._cython._similarity import cosine_common
+from .._cython._similarity import cosine_common, pearson_corr
 
 
 class ISimilarity(object):
@@ -63,10 +63,31 @@ class Pearson(ISimilarity):
         col_means = np.asarray(X.sum(axis=0) / (col_nnz + 1e-6)).ravel()
         X.data -= np.repeat(col_means, col_nnz)
 
-        dist, co_counts = cosine_common(X)
+        dist, co_counts = pearson_corr(X)
         if self.shrinkage > 0:
             dist *= co_counts / (co_counts + self.shrinkage)
         return dist
+
+    def memory_compute(self,X):
+        # convert to csc matrix for faster column-wise operations
+        X = check_matrix(X, 'csc', dtype=np.float32)
+        # subtract the item average rating
+        col_nnz = np.diff(X.indptr)
+        col_means = np.asarray(X.sum(axis=0) / (col_nnz + 1e-6)).ravel()
+        X.data -= np.repeat(col_means, col_nnz)
+
+        dist, co_counts = pearson_corr(X)
+        if self.shrinkage > 0:
+            dist *= co_counts / (co_counts + self.shrinkage)
+
+        # Delivering only patches of the data.
+        n_items = dist.shape[1]
+        linspace = np.linspace(0, n_items, num=29, endpoint=False)
+
+        lower_bound = 0
+        for upper_bound in linspace[1:]:
+            yield dist[:, lower_bound:int(upper_bound)]
+            lower_bound = int(upper_bound)
 
 
 class AdjustedCosine(ISimilarity):

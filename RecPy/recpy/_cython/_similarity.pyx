@@ -109,12 +109,12 @@ def memory_cosine_common(X, shrinkage, k_top_value, nitems):
 
     # Initialize the sorting array and the ending matrix.
     cdef np.ndarray[np.float32_t, ndim=1] values = np.empty([0], dtype=np.float32)
-    cdef np.ndarray[long, ndim=1] rows = np.empty([0], dtype=long)
-    cdef np.ndarray[np.int32_t, ndim=1] cols = np.empty([0], dtype=np.int32)
+    cdef np.ndarray[np.int64_t, ndim=1] rows = np.empty([0], dtype=np.int64)
+    cdef np.ndarray[np.int64_t, ndim=1] cols = np.empty([0], dtype=np.int64)
 
     # Initialize
-    cdef np.ndarray[long, ndim=1] idx_sorted = np.empty([nitems], dtype=long)
-    cdef np.ndarray[long, ndim=1] top_k_idx = np.empty([k_top_value], dtype=long)
+    cdef np.ndarray[np.int64_t, ndim=1] idx_sorted = np.empty([nitems], dtype=np.int64)
+    cdef np.ndarray[np.int64_t, ndim=1] top_k_idx = np.empty([k_top_value], dtype=np.int64)
 
     # EXPLANATION:
     # Pearson works as follows: we must multiply two items in different columns, but this multiplication is made using

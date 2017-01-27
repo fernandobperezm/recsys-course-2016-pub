@@ -18,5 +18,5 @@ python holdout_eval.py \
     --user_key user_id \
     --item_key item_id \
     --rating_key interaction_type \
-    --prediction_file ../results/COMP_pearson_item_knn.txt \
+    --prediction_file ../results/Pearson_K50_Shrinkage100 \
     --target_user ../data/competition/tu.csv

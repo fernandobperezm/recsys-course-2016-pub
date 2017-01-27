@@ -140,7 +140,7 @@ roc_auc_, precision_, recall_, map_, mrr_, ndcg_ = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 at = args.rec_length
 n_eval = 0
 
-#for test_user in range(nusers):
+# for test_user in range(nusers):
 for user in target_user:
     if (user in user_to_idx):
         test_user = user_to_idx[user]
@@ -156,7 +156,7 @@ for user in target_user:
 
         if args.prediction_file:
             # write the recommendation list to file, one user per line
-            #user_id = test_user
+            # user_id = test_user
             user_id = user
             rec_list = recommended_items[:args.rec_length]
             s = str(user_id) + ','

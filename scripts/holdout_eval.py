@@ -120,6 +120,13 @@ test = df_to_csr(test_df,
                  user_key='user_idx',
                  rating_key=args.rating_key)
 
+# open the prediction file
+if args.prediction_file:
+    pfile = open(args.prediction_file, 'w')
+    header = 'user_id,'
+    header += 'recommended_items\n'
+    pfile.write(header)
+
 # train the recommender
 recommender = RecommenderClass(**init_args)
 logger.info('Recommender: {}'.format(recommender))
@@ -128,19 +135,13 @@ logger.info('Training started')
 recommender.fit(train)
 logger.info('Training completed in {}'.format(dt.now() - tic))
 
-# open the prediction file
-if args.prediction_file:
-    pfile = open(args.prediction_file, 'w')
-    header = 'user_id,'
-    header += 'recommended_items\n'
-    pfile.write(header)
-
 # evaluate the ranking quality
 roc_auc_, precision_, recall_, map_, mrr_, ndcg_ = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 at = args.rec_length
 n_eval = 0
 
 # for test_user in range(nusers):
+i = 0
 for user in target_user:
     if (user in user_to_idx):
         test_user = user_to_idx[user]
@@ -151,7 +152,7 @@ for user in target_user:
     relevant_items = test[test_user].indices
     if len(relevant_items) > 0:
         n_eval += 1
-        # this will rank **all** items
+        # # this will rank **all** items
         recommended_items = recommender.recommend(user_id=test_user, exclude_seen=True)
 
         if args.prediction_file:
@@ -170,6 +171,19 @@ for user in target_user:
         map_ += map(recommended_items, relevant_items, at=at)
         mrr_ += rr(recommended_items, relevant_items, at=at)
         ndcg_ += ndcg(recommended_items, relevant_items, relevance=test[test_user].data, at=at)
+
+    else:
+        recommended_items = recommender.recommend_new_user(user_profile=user_profile, exclude_seen=True)
+
+        if args.prediction_file:
+            # write the recommendation list to file, one user per line
+            # user_id = test_user
+            user_id = user
+            rec_list = recommended_items[:args.rec_length]
+            s = str(user_id) + ','
+            s += ' '.join([str(x) for x in rec_list]) + '\n'
+            pfile.write(s)
+
 roc_auc_ /= n_eval
 precision_ /= n_eval
 recall_ /= n_eval

@@ -3,7 +3,7 @@ import logging
 from collections import OrderedDict
 from datetime import datetime as dt
 
-from recpy.utils.data_utils import read_dataset, df_to_csr
+from recpy.utils.data_utils import read_dataset, df_to_csr, read_target_users
 from recpy.utils.split import holdout
 from recpy.metrics import roc_auc, precision, recall, map, ndcg, rr
 
@@ -52,6 +52,7 @@ parser.add_argument('--recommender', type=str, default='top_pop')
 parser.add_argument('--params', type=str, default=None)
 parser.add_argument('--rec_length', type=int, default=10)
 parser.add_argument('--prediction_file', type=str, default=None)
+parser.add_argument('--target_user', type=str, default=None)
 args = parser.parse_args()
 
 # get the recommender class
@@ -83,6 +84,15 @@ dataset, item_to_idx, user_to_idx = read_dataset(
     item_key=args.item_key,
     user_key=args.user_key,
     rating_key=args.rating_key)
+
+if args.target_user:
+    logger.info('Reading {}'.format(args.target_user))
+    target_user = read_target_users(
+        args.target_user,
+        header=args.header,
+        sep=',',
+        columns=args.columns,
+        user_key=args.user_key)
 
 nusers, nitems = dataset.user_idx.max() + 1, dataset.item_idx.max() + 1
 logger.info('The dataset has {} users and {} items'.format(nusers, nitems))
@@ -121,16 +131,22 @@ logger.info('Training completed in {}'.format(dt.now() - tic))
 # open the prediction file
 if args.prediction_file:
     pfile = open(args.prediction_file, 'w')
-    n = args.rec_length if args.rec_length is not None else nitems
     header = 'user_id,'
-    header += ','.join(['rec_item{}'.format(i+1) for i in range(args.rec_length)]) + '\n'
+    header += 'recommended_items\n'
     pfile.write(header)
 
 # evaluate the ranking quality
 roc_auc_, precision_, recall_, map_, mrr_, ndcg_ = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 at = args.rec_length
 n_eval = 0
-for test_user in range(nusers):
+
+#for test_user in range(nusers):
+for user in target_user:
+    if (user in user_to_idx):
+        test_user = user_to_idx[user]
+    else:
+        test_user = user_to_idx[2690450]
+
     user_profile = train[test_user]
     relevant_items = test[test_user].indices
     if len(relevant_items) > 0:
@@ -140,10 +156,11 @@ for test_user in range(nusers):
 
         if args.prediction_file:
             # write the recommendation list to file, one user per line
-            user_id = test_user
+            #user_id = test_user
+            user_id = user
             rec_list = recommended_items[:args.rec_length]
             s = str(user_id) + ','
-            s += ','.join([str(x) for x in rec_list]) + '\n'
+            s += ' '.join([str(x) for x in rec_list]) + '\n'
             pfile.write(s)
 
         # evaluate the recommendation list with ranking metrics ONLY
@@ -160,6 +177,9 @@ map_ /= n_eval
 mrr_ /= n_eval
 ndcg_ /= n_eval
 
+if args.prediction_file:
+    pfile.close()
+
 logger.info('Ranking quality')
 logger.info('ROC-AUC: {:.4f}'.format(roc_auc_))
 logger.info('Precision@{}: {:.4f}'.format(at, precision_))
@@ -167,3 +187,5 @@ logger.info('Recall@{}: {:.4f}'.format(at, recall_))
 logger.info('MAP@{}: {:.4f}'.format(at, map_))
 logger.info('MRR@{}: {:.4f}'.format(at, mrr_))
 logger.info('NDCG@{}: {:.4f}'.format(at, ndcg_))
+
+

@@ -34,7 +34,6 @@ class ItemKNNRecommender(Recommender):
         # for each column, keep only the top-k scored items
         idx_sorted = np.argsort(item_weights, axis=0)  # sort by column
 
-
         if not self.sparse_weights:
             self.W = item_weights.copy()
             # index of the items that don't belong to the top-k similar items of each column
@@ -58,7 +57,6 @@ class ItemKNNRecommender(Recommender):
         user_profile = self._get_user_ratings(user_id)
         if self.sparse_weights:
             scores = user_profile.dot(self.W_sparse).toarray().ravel()
-            print(scores)
         else:
             scores = user_profile.dot(self.W).ravel()
         if self.normalize:

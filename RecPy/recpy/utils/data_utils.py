@@ -86,6 +86,49 @@ def read_dataset(path,
 
     return data, item_to_idx, user_to_idx
 
+def read_target_users(path,
+                 header=None,
+                 columns=None,
+                 user_key='user_id',
+                 sep=',',
+                 user_to_idx=None):
+    """
+
+    :param path:
+    :param header:
+    :param columns:
+    :param make_binary:
+    :param binary_th:
+    :param user_key:
+    :param item_key:
+    :param rating_key:
+    :param sep:
+    :param user_to_idx:
+    :param item_to_idx:
+    :return:
+    """
+    data = pd.read_csv(path, header=header, names=columns, sep=sep)
+    logger.info('Columns: {}'.format(data.columns.values))
+    if user_to_idx is None:
+        if 'user_idx' not in data.columns:
+            # these are used to map ids to indexes starting from 0 to nusers (or nusers)
+            users = data[user_key].unique()
+            if user_to_idx is None:
+                user_to_idx = pd.Series(data=np.arange(len(users)), index=users)
+            #  map ids to indices
+            data['user_idx'] = user_to_idx[data[user_key].values].values
+        else:
+            aux = data[[user_key, 'user_idx']].drop_duplicates()
+            user_to_idx = pd.Series(index=aux[0], data=aux[1])
+    else:
+        #  map ids to indices
+        data['user_idx'] = user_to_idx[data[user_key].values].values
+        if np.any(np.isnan(data['user_idx'])):
+            logger.error('NaN values in user_idx (new users?)')
+            raise RuntimeError('NaN values in user_idx')
+
+    return data[user_key].values
+
 
 def df_to_csr(df, nrows, ncols, is_binary=False, user_key='user_idx', item_key='item_idx', rating_key='rating'):
     """

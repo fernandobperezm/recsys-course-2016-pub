@@ -33,31 +33,7 @@ class MEMORYItemKNNRecommender(Recommender):
         self.dataset = X
         self.nitems = X.shape[1]
 
-        if not self.sparse_weights:
-            pass
-            # self.W = item_weights.copy()
-            # # index of the items that don't belong to the top-k similar items of each column
-            # not_top_k = idx_sorted[:-self.k, :]
-            # # use numpy fancy indexing to zero-out the values in sim without using a for loop
-            # self.W[not_top_k, np.arange(item_weights.shape[1])] = 0.0
-        else:
-            values, rows, cols = [], [], []
-            ncols = 0
-            j = 0
-            # Getting patches of items weights.
-            for item_weights in self.distance.memory_compute(X):
-                # for each column, keep only the top-k scored items
-                idx_sorted = np.argsort(item_weights, axis=0)  # sort by column
-                # iterate over each column and keep only the top-k similar items
-                ncols = item_weights.shape[1]
-                for i in range(ncols):
-                    top_k_idx = idx_sorted[-self.k:, i]
-                    values.extend(item_weights[top_k_idx, i])
-                    rows.extend(np.arange(self.nitems)[top_k_idx])
-                    cols.extend(np.ones(self.k) * j)
-                    j += 1
-
-            self.W_sparse = sps.csc_matrix((values, (rows, cols)), shape=(self.nitems, self.nitems), dtype=np.float32)
+        self.W_sparse = self.distance.memory_compute(X, self.k, self.nitems)
 
     def recommend(self, user_id, n=None, exclude_seen=True):
         # compute the scores using the dot product

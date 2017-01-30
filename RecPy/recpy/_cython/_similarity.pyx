@@ -73,6 +73,7 @@ def cosine_common(X):
                 result[j, i] = 0.0
                 common[i,j] = 0
                 common[j,i] = 0
+
     return result, common
 
 

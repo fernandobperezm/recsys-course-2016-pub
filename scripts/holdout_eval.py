@@ -2,6 +2,8 @@ import argparse
 import logging
 from collections import OrderedDict
 from datetime import datetime as dt
+from scipy import sparse as sp
+import numpy as np
 
 from recpy.utils.data_utils import read_dataset, df_to_csr, read_target_users
 from recpy.utils.split import holdout
@@ -84,6 +86,9 @@ dataset, item_to_idx, user_to_idx = read_dataset(
     item_key=args.item_key,
     user_key=args.user_key,
     rating_key=args.rating_key)
+# print(dataset)
+# print(dataset.loc[dataset['item_idx'] == 0, 'item_id'].loc[0])
+# print(dataset[dataset.item_idx.isin([0,1,2,3])].item_id.unique())
 
 if args.target_user:
     logger.info('Reading {}'.format(args.target_user))
@@ -145,11 +150,16 @@ i = 0
 for user in target_user:
     if (user in user_to_idx):
         test_user = user_to_idx[user]
+        user_profile = train[test_user]
+        relevant_items = test[test_user].indices
     else:
-        test_user = user_to_idx[2690450]
-
-    user_profile = train[test_user]
-    relevant_items = test[test_user].indices
+        test_user = user
+        user_profile = sp.csr_matrix((1, nitems))
+        relevant_items = []
+    #
+    #
+    # user_profile = train[test_user]
+    # relevant_items = test[test_user].indices
     if len(relevant_items) > 0:
         n_eval += 1
         # # this will rank **all** items
@@ -158,8 +168,10 @@ for user in target_user:
         if args.prediction_file:
             # write the recommendation list to file, one user per line
             # user_id = test_user
+            # rec_list = recommended_items[:args.rec_length]
             user_id = user
-            rec_list = recommended_items[:args.rec_length]
+            rec_list_idx = recommended_items[:args.rec_length]
+            rec_list = dataset[dataset.item_idx.isin(rec_list_idx)].item_id.unique()
             s = str(user_id) + ','
             s += ' '.join([str(x) for x in rec_list]) + '\n'
             pfile.write(s)
@@ -178,8 +190,10 @@ for user in target_user:
         if args.prediction_file:
             # write the recommendation list to file, one user per line
             # user_id = test_user
+            # rec_list = recommended_items[:args.rec_length]
             user_id = user
-            rec_list = recommended_items[:args.rec_length]
+            rec_list_idx = recommended_items[:args.rec_length]
+            rec_list = dataset[dataset.item_idx.isin(rec_list_idx)].item_id.unique()
             s = str(user_id) + ','
             s += ' '.join([str(x) for x in rec_list]) + '\n'
             pfile.write(s)

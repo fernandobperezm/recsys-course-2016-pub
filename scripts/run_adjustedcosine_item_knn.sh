@@ -7,21 +7,21 @@
 #--n_observed 3 --recommender item_knn --params similarity=cosine,k=50,shrinkage=25,normalize=False
 
 # Binary ratings for MOVIES.
-python holdout_eval.py \
-    ../data/ml100k/ratings.csv \
-    --header 0 \
-    --make_binary \
-    --binary_th 4 \
-    --recommender item_knn \
-    --params similarity=cosine,k=50,shrinkage=25 \
-    --rec_length 5 \
-    --prediction_file ../results/MOVIES_BINARY_cosine_K50_Shrinkage25.csv
+#python holdout_eval.py \
+#    ../data/ml100k/ratings.csv \
+#    --header 0 \
+#    --make_binary \
+#    --binary_th 4 \
+#    --recommender item_knn \
+#    --params similarity=adj-cosine,k=50,shrinkage=25 \
+#    --rec_length 5 \
+#    --prediction_file ../results/MOVIES_BINARY_adjustedcosine_K50_Shrinkage25.csv
 
 #python holdout_eval.py \
 #    ../data/competition/interactions.csv \
 #    --header 0 \
 #    --recommender MEMORY_item_knn \
-#    --params similarity=cosine,k=50,shrinkage=100 \
+#    --params similarity=adj-cosine,k=50,shrinkage=100 \
 #    --rec_length 5 \
 #    --sep ! \
 #    --user_key user_id \
